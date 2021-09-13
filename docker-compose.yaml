@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+    redis:
+      container_name: redis
+      build: ./redis/.
+      ports:
+        - "6379:6379"
+      volumes:
+        - ../data/redis:/data
+      restart: always
+    backend:
+      container_name: backend
+      build:
+        context: .
+        dockerfile: Dockerfile_guibackend
+      depends_on:
+        - redis
+      ports:
+        - "1323:1323"
+      volumes:
+        - ../temp_videos:/videos
