@@ -6,7 +6,6 @@ require (
 	gocv.io/x/gocv v0.28.0
 	www.seawise.com/shrimps/common/core v0.0.0-unpublished
 	www.seawise.com/shrimps/common/log v0.0.0-unpublished
-	www.seawise.com/shrimps/common/persistance v0.0.0-unpublished
 )
 
 replace (

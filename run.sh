@@ -1,4 +1,4 @@
 #!/bin/bash
 
 docker-compose down
-docker-compose up --build backend
+docker-compose up --build

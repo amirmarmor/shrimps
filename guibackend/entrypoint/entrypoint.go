@@ -3,6 +3,7 @@ package entrypoint
 import (
 	"www.seawise.com/shrimps/common/core"
 	"www.seawise.com/shrimps/common/exposed"
+	"www.seawise.com/shrimps/common/log"
 	"www.seawise.com/shrimps/common/persistance"
 	"www.seawise.com/shrimps/guibackend/executors/configuration"
 	"www.seawise.com/shrimps/guibackend/web"
@@ -15,6 +16,9 @@ type EntryPoint struct {
 }
 
 func (p *EntryPoint) Run() {
+	log.InitFlags()
+	persistance.InitFlags()
+
 	p.buildBlocks()
 	p.addExecutors()
 

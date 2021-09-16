@@ -13,8 +13,9 @@ type Persist struct {
 }
 
 func Create() (*Persist, error) {
+	addr := Config.Host + ":6379"
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "redis:6379",
+		Addr:     addr,
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})

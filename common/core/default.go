@@ -10,16 +10,22 @@ type Default = struct {
 	Cameras string
 	Offset  string
 	Rules   string
+	Show		string
+	Record 	string
 }
 
 var Defaults Default
 
 func InitFlags() {
-	defaultRule := `[{"recurring": "h", "start": "99", "duration": "180"}, {"recurring": "d", "start": "15", "duration": "60"}]`
+	defaultRule := `[{"id": "0", "recurring": "Minute", "start": "99", "duration": "180"}, {"id": "1", "recurring": "Hour", "start": "15", "duration": "60"}]`
+	defaultShow := "[]"
+	defaultRecord := "[]"
 
 	flag.StringVar(&Defaults.Cameras, "cameras", "1", "The number of cameras connected")
 	flag.StringVar(&Defaults.Offset, "offset", "0", "The offset of the first camera - if no webcam = 0")
-	flag.StringVar(&Defaults.Rules, "rules", defaultRule, "rules")
+	flag.StringVar(&Defaults.Rules, "rules", defaultRule, "recording schedules")
+	flag.StringVar(&Defaults.Show, "show", defaultShow, "which cameras should show online")
+	flag.StringVar(&Defaults.Record, "record", defaultRecord, "which cameras should record now")
 
 	log.AddNotify(postParse)
 }

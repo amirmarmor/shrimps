@@ -11,6 +11,8 @@ type Configuration struct {
 	Cameras string `json:"cameras"`
 	Offset  string `json:"offset"`
 	Rules   []Rule `json:"rules"`
+	Show    []int  `json:"show"`
+	Record  []int  `json:"record"`
 }
 
 type ConfigManager struct {
@@ -19,6 +21,7 @@ type ConfigManager struct {
 }
 
 type Rule struct {
+	Id        string `json:"id"`
 	Recurring string `json:"recurring"`
 	Start     string `json:"start"`
 	Duration  string `json:"duration"`
@@ -65,6 +68,18 @@ func (cm *ConfigManager) GetConfig() (*Configuration, error) {
 		return nil, fmt.Errorf("failed to unmarshal: %v", err)
 	}
 
+	show := make([]int, 0)
+	err = json.Unmarshal([]byte(Defaults.Show), &show)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal: %v", err)
+	}
+
+	record := make([]int, 0)
+	err = json.Unmarshal([]byte(Defaults.Record), &record)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal: %v", err)
+	}
+
 	config.Rules = rules
 
 	return config, nil
@@ -78,7 +93,7 @@ func (cm *ConfigManager) SetConfig(configJson string) error {
 
 	config := &Configuration{}
 	err = json.Unmarshal([]byte(configJson), config)
-  if err != nil {
+	if err != nil {
 		return fmt.Errorf("failed to unmarshal: %v", err)
 	}
 	cm.Config = config
