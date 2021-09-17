@@ -3,7 +3,7 @@ package core
 import (
 	"encoding/json"
 	"github.com/namsral/flag"
-	"www.seawise.com/shrimps/common/log"
+	"www.seawise.com/shrimps/backend/log"
 )
 
 type Default = struct {

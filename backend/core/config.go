@@ -3,16 +3,14 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"www.seawise.com/shrimps/common/exposed"
-	"www.seawise.com/shrimps/common/persistance"
+	"www.seawise.com/shrimps/backend/exposed"
+	"www.seawise.com/shrimps/backend/persistance"
 )
 
 type Configuration struct {
 	Cameras string   `json:"cameras"`
 	Offset  string   `json:"offset"`
 	Rules   []Rule   `json:"rules"`
-	Show    []string `json:"show"`
-	Record  []string `json:"record"`
 }
 
 type ConfigManager struct {

@@ -8,14 +8,15 @@ services:
       volumes:
         - ../data/redis:/data
       restart: always
-#    backend:
-#      container_name: backend
-#      build:
-#        context: .
-#        dockerfile: Dockerfile_guibackend
-#      depends_on:
-#        - redis
-#      ports:
-#        - "1323:1323"
-#      volumes:
-#        - ../temp_videos:/videos
+    backend:
+      environment:
+        - HOST=redis
+      devices:
+        - /dev/video0:/dev/video0
+      container_name: backend
+      build:
+        context: ./backend
+      depends_on:
+        - redis
+      volumes:
+        - /videos:/app/videos

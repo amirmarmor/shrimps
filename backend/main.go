@@ -1,6 +1,6 @@
 package main
 
-import "www.seawise.com/shrimps/capture/entrypoint"
+import "www.seawise.com/shrimps/backend/entrypoint"
 
 func main() {
 	e := entrypoint.EntryPoint{}
