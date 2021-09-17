@@ -6,20 +6,20 @@ import (
 	"www.seawise.com/shrimps/common/log"
 )
 
-type RedisConfig struct {
+type RedisConfiguration struct {
 	Host string
 }
 
-var Config RedisConfig
+var RedisConfig RedisConfiguration
 
 func InitFlags() {
-	flag.StringVar(&Config.Host, "host", "redis", "redis host")
+	flag.StringVar(&RedisConfig.Host, "host", "redis", "redis host")
 
 	log.AddNotify(postParse)
 }
 
 func postParse() {
-	marshal, err := json.Marshal(Config)
+	marshal, err := json.Marshal(RedisConfig)
 	if err != nil {
 		log.Fatal("marshal config failed: %v", err)
 	}

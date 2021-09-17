@@ -28,9 +28,9 @@ type Channel struct {
 	ticker     *time.Ticker
 }
 
-func inArray(needle int, haystack []int) bool {
+func inArray(needle int, haystack []string) bool {
 	for _, val := range haystack {
-		if needle == val {
+		if string(needle) == val {
 			return true
 		}
 	}

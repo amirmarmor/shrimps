@@ -39,7 +39,8 @@ func (executor *Executor) SetConfig(c echo.Context) error {
 		return fmt.Errorf("failed to marshal: %v", err)
 	}
 
-	err = executor.Manager.SetConfig(string(configJson))
+	temp := string(configJson)
+	err = executor.Manager.SetConfig(temp)
 	if err != nil {
 		return fmt.Errorf("failed to set configuration: %v", err)
 	}

@@ -18,6 +18,8 @@ type EntryPoint struct {
 func (p *EntryPoint) Run() {
 	log.InitFlags()
 	persistance.InitFlags()
+	log.ParseFlags()
+	log.Info("Starting")
 
 	p.buildBlocks()
 	p.addExecutors()

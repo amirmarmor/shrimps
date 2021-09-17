@@ -8,11 +8,11 @@ import (
 )
 
 type Configuration struct {
-	Cameras string `json:"cameras"`
-	Offset  string `json:"offset"`
-	Rules   []Rule `json:"rules"`
-	Show    []int  `json:"show"`
-	Record  []int  `json:"record"`
+	Cameras string   `json:"cameras"`
+	Offset  string   `json:"offset"`
+	Rules   []Rule   `json:"rules"`
+	Show    []string `json:"show"`
+	Record  []string `json:"record"`
 }
 
 type ConfigManager struct {
