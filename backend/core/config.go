@@ -8,9 +8,8 @@ import (
 )
 
 type Configuration struct {
-	Cameras string   `json:"cameras"`
-	Offset  string   `json:"offset"`
-	Rules   []Rule   `json:"rules"`
+	Offset int    `json:"offset"`
+	Rules  []Rule `json:"rules"`
 }
 
 type ConfigManager struct {
@@ -57,7 +56,6 @@ func (cm *ConfigManager) GetConfig() (*Configuration, error) {
 		return config, nil
 	}
 
-	config.Cameras = Defaults.Cameras
 	config.Offset = Defaults.Offset
 
 	rules := make([]Rule, 0)

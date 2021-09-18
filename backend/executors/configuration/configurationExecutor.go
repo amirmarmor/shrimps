@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"strconv"
+	"time"
 	"www.seawise.com/shrimps/backend/capture"
 	"www.seawise.com/shrimps/backend/core"
 )
@@ -14,14 +16,21 @@ type Executor struct {
 	Capt    *capture.Capture
 }
 
+type ActionRequest struct {
+	Type    string `json:"type"`
+	Channel string `json:"channel"`
+}
+
 type SetResponse struct {
 	Message string
 }
 
-type GetResponse struct {
-	Config *core.Configuration `json:"config"`
-	Show   []int               `json:"show"`
-	Record []int               `json:"record"`
+type ConfigResponse struct {
+	Offset   int         `json:"offset"`
+	Rules    []core.Rule `json:"rules"`
+	Show     []int       `json:"show"`
+	Record   []int       `json:"record"`
+	Channels int         `json:"channels"`
 }
 
 func Produce(configManager *core.ConfigManager, capt *capture.Capture) *Executor {
@@ -32,7 +41,7 @@ func Produce(configManager *core.ConfigManager, capt *capture.Capture) *Executor
 	return &executor
 }
 
-func (executor *Executor) GetConfig(c echo.Context) error {
+func (executor *Executor) prepareConfigResponse() *ConfigResponse {
 	show := make([]int, 0)
 	record := make([]int, 0)
 	for i, channel := range executor.Capt.Channels {
@@ -43,11 +52,17 @@ func (executor *Executor) GetConfig(c echo.Context) error {
 			record = append(record, i)
 		}
 	}
-	response := &GetResponse{
-		executor.Manager.Config,
+	return &ConfigResponse{
+		executor.Manager.Config.Offset,
+		executor.Manager.Config.Rules,
 		show,
 		record,
+		len(executor.Capt.Channels),
 	}
+}
+
+func (executor *Executor) GetConfig(c echo.Context) error {
+	response := executor.prepareConfigResponse()
 	return c.JSON(http.StatusOK, response)
 }
 
@@ -71,4 +86,27 @@ func (executor *Executor) SetConfig(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, &SetResponse{Message: "done"})
+}
+
+func (executor *Executor) DoAction(c echo.Context) error {
+	actionRequest := &ActionRequest{}
+	err := c.Bind(actionRequest)
+	if err != nil {
+		return fmt.Errorf("failed to bind: %v", err)
+	}
+
+	channel, err := strconv.Atoi(actionRequest.Channel)
+	if err != nil {
+		return fmt.Errorf("failed to convert channel: %v", err)
+	}
+
+	action := &capture.ShowRecord{
+		Type:    actionRequest.Type,
+		Channel: channel,
+	}
+
+	executor.Capt.Action <- action
+	time.Sleep(time.Millisecond * 10)
+	response := executor.prepareConfigResponse()
+	return c.JSON(http.StatusOK, response)
 }

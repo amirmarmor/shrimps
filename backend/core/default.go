@@ -7,8 +7,7 @@ import (
 )
 
 type Default = struct {
-	Cameras string
-	Offset  string
+	Offset  int
 	Rules   string
 	Show		string
 	Record 	string
@@ -21,8 +20,7 @@ func InitFlags() {
 	defaultShow := "[]"
 	defaultRecord := "[]"
 
-	flag.StringVar(&Defaults.Cameras, "cameras", "1", "The number of cameras connected")
-	flag.StringVar(&Defaults.Offset, "offset", "0", "The offset of the first camera - if no webcam = 0")
+	flag.IntVar(&Defaults.Offset, "offset", 0, "The offset of the first camera - if no webcam = 0")
 	flag.StringVar(&Defaults.Rules, "rules", defaultRule, "recording schedules")
 	flag.StringVar(&Defaults.Show, "show", defaultShow, "which cameras should show online")
 	flag.StringVar(&Defaults.Record, "record", defaultRecord, "which cameras should record now")

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 	"www.seawise.com/shrimps/backend/log"
+	"www.seawise.com/shrimps/backend/mjpeg"
 )
 
 type Channel struct {
@@ -15,7 +16,8 @@ type Channel struct {
 	cap    *gocv.VideoCapture
 	image  gocv.Mat
 	writer *gocv.VideoWriter
-	window *gocv.Window
+	Stream *mjpeg.Stream
+	Window *gocv.Window
 	Show   bool
 	Record bool
 }
@@ -39,6 +41,11 @@ func Produce(channel int) (*Channel, error) {
 		return nil, fmt.Errorf("failed to create path: %v", err)
 	}
 
+	stream := mjpeg.NewStream()
+
+	window := gocv.NewWindow("channel-" + strconv.Itoa(channel))
+	window.ResizeWindow(1,1)
+
 	saveFileName := path + "/" +
 		strconv.Itoa(now.Hour()) +
 		strconv.Itoa(now.Minute()) +
@@ -57,6 +64,8 @@ func Produce(channel int) (*Channel, error) {
 	c.image = img
 	c.writer = writer
 	c.init = true
+	c.Stream = stream
+	c.Window = window
 
 	return c, nil
 
@@ -66,13 +75,7 @@ func (c *Channel) close() {
 	c.cap.Close()
 	c.image.Close()
 	c.writer.Close()
-	c.window.Close()
-}
-
-func (c *Channel) createWindow() {
-	c.window = gocv.NewWindow(fmt.Sprintf("channel-%v", c.name))
-	c.window.ResizeWindow(640,420)
-	c.window.MoveWindow(1000, 500)
+	c.Window.Close()
 }
 
 func createSavePath() (string, error) {

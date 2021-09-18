@@ -2,6 +2,7 @@ package capture
 
 import (
 	"fmt"
+	"gocv.io/x/gocv"
 	"reflect"
 	"strconv"
 	"time"
@@ -31,22 +32,19 @@ func Create(config *core.Configuration) *Capture {
 }
 
 func (c *Capture) Init() error {
-	numCameras, err := strconv.Atoi(c.config.Cameras)
-	if err != nil {
-		return fmt.Errorf("failed to convert config: %v", err)
-	}
+	return c.detectCameras()
+}
 
-	offset, err := strconv.Atoi(c.config.Offset)
-	if err != nil {
-		return fmt.Errorf("failed to convert config: %v", err)
-	}
-
-	for i := offset; i < numCameras * 2; i += 2 {
+func (c *Capture) detectCameras() error {
+	detecting := true
+	for detecting {
+		i := c.config.Offset
 		channel, err := Produce(i)
 		if err != nil {
-			return fmt.Errorf("failed to produce channel: %v", err)
+			detecting = false
+		} else {
+			c.Channels = append(c.Channels, channel)
 		}
-		c.Channels = append(c.Channels, channel)
 	}
 	return nil
 }
@@ -78,11 +76,6 @@ func (c *Capture) Update(config *core.Configuration) error {
 func (c *Capture) update(action *ShowRecord) {
 	if action.Type == "show" {
 		c.Channels[action.Channel].Show = !c.Channels[action.Channel].Show
-		if c.Channels[action.Channel].Show {
-			c.Channels[action.Channel].createWindow()
-		} else {
-			c.Channels[action.Channel].window.Close()
-		}
 	}
 	if action.Type == "record" {
 		c.Channels[action.Channel].Record = !c.Channels[action.Channel].Record
@@ -91,20 +84,11 @@ func (c *Capture) update(action *ShowRecord) {
 }
 
 func (c *Capture) capture() {
-	//log.V5("capture")
-	c.counter ++
-	//if c.counter > 1000000000 {
-	//	panic("000000000")
-	//}
 	for i := 0; i < len(c.Channels); i++ {
+
 		if !c.Channels[i].Show && !c.Channels[i].Record {
 			continue
 		}
-
-		if !c.Channels[i].init {
-			c.Start()
-		}
-
 		ok := c.Channels[i].cap.Read(&c.Channels[i].image)
 		if !ok {
 			c.Errors <- fmt.Errorf("channel closed %v\n", i)
@@ -121,9 +105,15 @@ func (c *Capture) capture() {
 			}
 		}
 
+		buffer, err := gocv.IMEncode(".jpg", c.Channels[i].image)
+		if err != nil {
+			c.Errors <- err
+		}
+
+		c.Channels[i].Stream.UpdateJPEG(buffer.GetBytes())
 		if c.Channels[i].Show {
-			c.Channels[i].window.IMShow(c.Channels[i].image)
-			c.Channels[i].window.WaitKey(1)
+			c.Channels[i].Window.IMShow(c.Channels[i].image)
+			c.Channels[i].Window.WaitKey(1)
 		}
 	}
 }

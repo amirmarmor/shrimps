@@ -3,11 +3,11 @@ package entrypoint
 import (
 	"www.seawise.com/shrimps/backend/capture"
 	"www.seawise.com/shrimps/backend/core"
-	"www.seawise.com/shrimps/backend/executors/action"
 	"www.seawise.com/shrimps/backend/executors/configuration"
 	"www.seawise.com/shrimps/backend/exposed"
 	"www.seawise.com/shrimps/backend/log"
 	"www.seawise.com/shrimps/backend/persistance"
+	"www.seawise.com/shrimps/backend/streamer"
 	"www.seawise.com/shrimps/backend/web"
 )
 
@@ -16,6 +16,7 @@ type EntryPoint struct {
 	web     *web.Web
 	manager *core.ConfigManager
 	capt    *capture.Capture
+	stream  *streamer.Streamer
 }
 
 func (p *EntryPoint) Run() {
@@ -27,6 +28,7 @@ func (p *EntryPoint) Run() {
 	p.buildBlocks()
 	p.addExecutors()
 
+	go p.stream.Start()
 	p.web.Start()
 }
 
@@ -47,6 +49,9 @@ func (p *EntryPoint) buildBlocks() {
 	p.capt = capture.Create(p.manager.Config)
 	p.capt.Init()
 	go p.capt.Start()
+
+	p.stream = streamer.Create(p.capt)
+	p.stream.Produce()
 }
 
 func (p *EntryPoint) addExecutors() {
@@ -54,7 +59,6 @@ func (p *EntryPoint) addExecutors() {
 	configurationExecutor := configuration.Produce(p.manager, p.capt)
 	p.web.Client.GET(exposed.GetConfigUrl, configurationExecutor.GetConfig)
 	p.web.Client.POST(exposed.SetConfigUrl, configurationExecutor.SetConfig)
+	p.web.Client.POST(exposed.ActionUrl, configurationExecutor.DoAction)
 
-	actionExecutor := action.Produce(p.capt)
-	p.web.Client.POST(exposed.ActionUrl, actionExecutor.Do)
 }
