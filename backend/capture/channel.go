@@ -22,60 +22,126 @@ type Channel struct {
 	Record bool
 }
 
-func Produce(channel int) (*Channel, error) {
+func CreateChannel(channel int) *Channel {
+	return &Channel{
+		name: channel,
+		Stream: mjpeg.NewStream(),
+	}
+}
+
+func (c *Channel) Init() error {
 	now := time.Now()
-	vc, err := gocv.OpenVideoCapture(channel)
+	vc, err := gocv.OpenVideoCapture(c.name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to capture video %v: ", err)
+		return fmt.Errorf("Init failed to capture video %v: ", err)
 	}
 
 	img := gocv.NewMat()
 
 	ok := vc.Read(&img)
 	if !ok {
-		return nil, fmt.Errorf("failed to read")
+		return fmt.Errorf("Init failed to read")
 	}
 
 	path, err := createSavePath()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create path: %v", err)
+		return fmt.Errorf("failed to create path: %v", err)
 	}
 
-	stream := mjpeg.NewStream()
-
-	window := gocv.NewWindow("channel-" + strconv.Itoa(channel))
+	window := gocv.NewWindow("channel-" + strconv.Itoa(c.name))
 	window.ResizeWindow(1,1)
 
 	saveFileName := path + "/" +
 		strconv.Itoa(now.Hour()) +
 		strconv.Itoa(now.Minute()) +
 		strconv.Itoa(now.Second()) +
-		"-" + strconv.Itoa(channel) +
+		"-" + strconv.Itoa(c.name) +
 		".avi"
 
 	writer, err := gocv.VideoWriterFile(saveFileName, "MJPG", 25, img.Cols(), img.Rows(), true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create writer", err)
+		return fmt.Errorf("failed to create writer", err)
 	}
 
-	c := &Channel{}
-	c.name = channel
 	c.cap = vc
 	c.image = img
 	c.writer = writer
 	c.init = true
-	c.Stream = stream
 	c.Window = window
 
-	return c, nil
-
+	return nil
 }
 
-func (c *Channel) close() {
-	c.cap.Close()
-	c.image.Close()
-	c.writer.Close()
-	c.Window.Close()
+func (c *Channel) close() error {
+	err := c.cap.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close capture: %v", err)
+	}
+	err = c.image.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close image: %v", err)
+	}
+
+	err =c.writer.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close writer: %v", err)
+	}
+
+	err = c.Window.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close window: %v", err)
+	}
+
+	c.init = false
+	return nil
+}
+
+func (c *Channel) Read() error {
+	if !c.Show && !c.Record {
+		if c.init {
+			err := c.close()
+			if err != nil {
+				return fmt.Errorf("read failed to close: %v", err)
+			}
+		}
+		return nil
+	}
+
+	if !c.init {
+		err := c.Init()
+		if err != nil {
+			return fmt.Errorf("read init failed to close: %v", err)
+		}
+
+	}
+
+	ok := c.cap.Read(&c.image)
+	if !ok {
+		return fmt.Errorf("read encountered channel closed %v\n", c.name)
+	}
+
+	if c.image.Empty() {
+		return nil
+	}
+
+	if c.Record {
+		err := c.writer.Write(c.image)
+		if err != nil {
+			return fmt.Errorf("read failed to write: %v", err)
+		}
+	}
+
+	buffer, err := gocv.IMEncode(".jpg", c.image)
+	if err != nil {
+		return fmt.Errorf("read failed to encode: %v", err)
+	}
+
+	c.Stream.UpdateJPEG(buffer.GetBytes())
+	if c.Show {
+		c.Window.IMShow(c.image)
+		c.Window.WaitKey(1)
+	}
+	 return nil
 }
 
 func createSavePath() (string, error) {

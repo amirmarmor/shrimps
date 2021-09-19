@@ -2,7 +2,6 @@ package capture
 
 import (
 	"fmt"
-	"gocv.io/x/gocv"
 	"reflect"
 	"strconv"
 	"time"
@@ -39,13 +38,15 @@ func (c *Capture) detectCameras() error {
 	detecting := true
 	for detecting {
 		i := c.config.Offset
-		channel, err := Produce(i)
+		channel := CreateChannel(i)
+		err := channel.Init()
 		if err != nil {
 			detecting = false
 		} else {
 			c.Channels = append(c.Channels, channel)
 		}
 	}
+
 	return nil
 }
 
@@ -60,62 +61,41 @@ func (c *Capture) Start() {
 	}
 }
 
-func (c *Capture) Update(config *core.Configuration) error {
-	for i := 0; i < len(c.Channels); i++ {
-		c.Channels[i].close()
-	}
-	c.config = config
-	err := c.Init()
-	if err != nil {
-		return err
-	}
-	go c.Start()
-	return nil
-}
+//func (c *Capture) Update(config *core.Configuration) error {
+//	for i := 0; i < len(c.Channels); i++ {
+//		c.Channels[i].close()
+//	}
+//	c.config = config
+//	err := c.Init()
+//	if err != nil {
+//		return err
+//	}
+//	go c.Start()
+//	return nil
+//}
 
-func (c *Capture) update(action *ShowRecord) {
+func (c *Capture) update(action *ShowRecord) error {
 	if action.Type == "show" {
 		c.Channels[action.Channel].Show = !c.Channels[action.Channel].Show
 	}
 	if action.Type == "record" {
 		c.Channels[action.Channel].Record = !c.Channels[action.Channel].Record
 	}
-	c.capture()
+	err := c.capture()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (c *Capture) capture() {
-	for i := 0; i < len(c.Channels); i++ {
-
-		if !c.Channels[i].Show && !c.Channels[i].Record {
-			continue
-		}
-		ok := c.Channels[i].cap.Read(&c.Channels[i].image)
-		if !ok {
-			c.Errors <- fmt.Errorf("channel closed %v\n", i)
-		}
-
-		if c.Channels[i].image.Empty() {
-			continue
-		}
-
-		if c.Channels[i].Record {
-			err := c.Channels[i].writer.Write(c.Channels[i].image)
-			if err != nil {
-				c.Errors <- fmt.Errorf("failed to Write: %v", err)
-			}
-		}
-
-		buffer, err := gocv.IMEncode(".jpg", c.Channels[i].image)
+func (c *Capture) capture() error {
+	for _, channel := range c.Channels {
+		err := channel.Read()
 		if err != nil {
-			c.Errors <- err
-		}
-
-		c.Channels[i].Stream.UpdateJPEG(buffer.GetBytes())
-		if c.Channels[i].Show {
-			c.Channels[i].Window.IMShow(c.Channels[i].image)
-			c.Channels[i].Window.WaitKey(1)
+			return fmt.Errorf("capture failed: %v", err)
 		}
 	}
+	return nil
 }
 
 func (c *Capture) checkRule() bool {
