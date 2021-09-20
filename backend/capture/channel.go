@@ -4,28 +4,37 @@ import (
 	"fmt"
 	"gocv.io/x/gocv"
 	"os"
-	"strconv"
+	"reflect"
 	"time"
+	"www.seawise.com/shrimps/backend/core"
 	"www.seawise.com/shrimps/backend/log"
 	"www.seawise.com/shrimps/backend/mjpeg"
 )
 
 type Channel struct {
-	name   int
-	init   bool
-	cap    *gocv.VideoCapture
-	image  gocv.Mat
-	writer *gocv.VideoWriter
-	Stream *mjpeg.Stream
-	Window *gocv.Window
-	Show   bool
-	Record bool
+	name      int
+	init      bool
+	cap       *gocv.VideoCapture
+	image     gocv.Mat
+	writer    *gocv.VideoWriter
+	Stream    *mjpeg.Stream
+	Show      bool
+	Record    bool
+	Recordings map[int64]*Recording
+	rules     []core.Rule
 }
 
-func CreateChannel(channel int) *Channel {
+type Recording struct {
+	isRecording bool
+	startTime   time.Time
+}
+
+func CreateChannel(channel int, rules []core.Rule) *Channel {
 	return &Channel{
-		name: channel,
+		name:   channel,
 		Stream: mjpeg.NewStream(),
+		rules:  rules,
+		Recordings: make(map[int64]*Recording),
 	}
 }
 
@@ -43,20 +52,12 @@ func (c *Channel) Init() error {
 		return fmt.Errorf("Init failed to read")
 	}
 
-	path, err := createSavePath()
+	path, err := c.createSavePath()
 	if err != nil {
 		return fmt.Errorf("failed to create path: %v", err)
 	}
 
-	window := gocv.NewWindow("channel-" + strconv.Itoa(c.name))
-	window.ResizeWindow(1,1)
-
-	saveFileName := path + "/" +
-		strconv.Itoa(now.Hour()) +
-		strconv.Itoa(now.Minute()) +
-		strconv.Itoa(now.Second()) +
-		"-" + strconv.Itoa(c.name) +
-		".avi"
+	saveFileName := path + "/" + now.Format("2006-01-02--15-04-05") + ".avi"
 
 	writer, err := gocv.VideoWriterFile(saveFileName, "MJPG", 25, img.Cols(), img.Rows(), true)
 	if err != nil {
@@ -67,7 +68,6 @@ func (c *Channel) Init() error {
 	c.image = img
 	c.writer = writer
 	c.init = true
-	c.Window = window
 
 	return nil
 }
@@ -82,14 +82,9 @@ func (c *Channel) close() error {
 		return fmt.Errorf("failed to close image: %v", err)
 	}
 
-	err =c.writer.Close()
+	err = c.writer.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close writer: %v", err)
-	}
-
-	err = c.Window.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close window: %v", err)
 	}
 
 	c.init = false
@@ -97,7 +92,7 @@ func (c *Channel) close() error {
 }
 
 func (c *Channel) Read() error {
-	if !c.Show && !c.Record {
+	if !c.Show && !c.Record && !c.checkRules(){
 		if c.init {
 			err := c.close()
 			if err != nil {
@@ -124,7 +119,7 @@ func (c *Channel) Read() error {
 		return nil
 	}
 
-	if c.Record {
+	if c.Record || c.checkRules() {
 		err := c.writer.Write(c.image)
 		if err != nil {
 			return fmt.Errorf("read failed to write: %v", err)
@@ -137,14 +132,10 @@ func (c *Channel) Read() error {
 	}
 
 	c.Stream.UpdateJPEG(buffer.GetBytes())
-	if c.Show {
-		c.Window.IMShow(c.image)
-		c.Window.WaitKey(1)
-	}
-	 return nil
+	return nil
 }
 
-func createSavePath() (string, error) {
+func (c *Channel) createSavePath() (string, error) {
 	_, err := os.Stat("videos")
 
 	if os.IsNotExist(err) {
@@ -156,23 +147,46 @@ func createSavePath() (string, error) {
 		}
 	}
 
-	now := time.Now()
-	y, m, d := now.Date()
-	path := fmt.Sprintf("videos/%v", fmt.Sprintf("%v-%v-%v", y, m, d))
+	path := fmt.Sprintf("videos/channel-%v", c.name)
 	_, err = os.Stat(path)
 
-	if !os.IsNotExist(err) {
-		err := os.RemoveAll(path)
+	if os.IsNotExist(err) {
+		log.V5("creating file direcotry!")
+		err = os.Mkdir(path, 0777)
 		if err != nil {
-			log.Error("couldnt remove folder", path)
+			log.Error("couldnt create images directory", err)
+			return "", err
 		}
 	}
 
-	log.V5("creating file direcotry!")
-	err = os.Mkdir(path, 0777)
-	if err != nil {
-		log.Error("couldnt create images directory", err)
-		return "", err
-	}
 	return path, nil
+}
+
+func (c *Channel) checkRules() bool {
+	now := time.Now()
+	for _, rule := range c.rules {
+		bar := GetTimeField(rule.Recurring, now)
+		if rule.Start == bar {
+			if c.Recordings[rule.Id] == nil {
+				c.Recordings[rule.Id] = &Recording{
+					true,
+					now,
+				}
+				return true
+			}
+		}
+
+		if c.Recordings[rule.Id] != nil && now.Sub(c.Recordings[rule.Id].startTime) <= time.Second*time.Duration(rule.Duration) {
+			return true
+		}
+
+		c.Recordings[rule.Id] = nil
+	}
+	return false
+}
+
+func GetTimeField(s string, now time.Time) int64 {
+	r := reflect.ValueOf(now).MethodByName(s)
+	f := r.Call(nil)
+	return int64(f[0].Interface().(int))
 }

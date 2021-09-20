@@ -2,11 +2,8 @@ package capture
 
 import (
 	"fmt"
-	"reflect"
-	"strconv"
 	"time"
 	"www.seawise.com/shrimps/backend/core"
-	"www.seawise.com/shrimps/backend/exposed"
 )
 
 type Capture struct {
@@ -36,14 +33,15 @@ func (c *Capture) Init() error {
 
 func (c *Capture) detectCameras() error {
 	detecting := true
+	i := c.config.Offset
 	for detecting {
-		i := c.config.Offset
-		channel := CreateChannel(i)
+		channel := CreateChannel(i, c.config.Rules)
 		err := channel.Init()
 		if err != nil {
 			detecting = false
 		} else {
 			c.Channels = append(c.Channels, channel)
+			i += 2
 		}
 	}
 
@@ -98,47 +96,3 @@ func (c *Capture) capture() error {
 	return nil
 }
 
-func (c *Capture) checkRule() bool {
-	now := time.Now()
-	zeroTime, err := time.Parse(time.RFC3339, exposed.ZeroTime)
-	if err != nil {
-		c.Errors <- err
-		return false
-	}
-
-	for _, rule := range c.config.Rules {
-		start, err := strconv.Atoi(rule.Start)
-		if err != nil {
-			c.Errors <- fmt.Errorf("failed to convert rule: %v", err)
-			return false
-		}
-		duration, err := strconv.Atoi(rule.Duration)
-		if err != nil {
-			c.Errors <- fmt.Errorf("failed to convert rule: %v", err)
-			return false
-		}
-
-		bar := GetTimeField(rule.Recurring)
-
-		if start == bar {
-			if c.Recording[rule.Id] == zeroTime {
-				c.Recording[rule.Id] = now
-				return true
-			}
-
-			if now.Sub(c.Recording[rule.Id]) <= time.Second*time.Duration(duration) {
-				return true
-			}
-		} else {
-			c.Recording[rule.Id] = zeroTime
-		}
-	}
-	return false
-}
-
-func GetTimeField(s string) int {
-	now := time.Now()
-	r := reflect.ValueOf(now)
-	f := reflect.Indirect(r).FieldByName(s)
-	return int(f.Int())
-}

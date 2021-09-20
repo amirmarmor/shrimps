@@ -8,7 +8,7 @@ import (
 )
 
 type Configuration struct {
-	Offset int    `json:"offset"`
+	Offset int    `json:"offset,string,omitempty"`
 	Rules  []Rule `json:"rules"`
 }
 
@@ -18,10 +18,10 @@ type ConfigManager struct {
 }
 
 type Rule struct {
-	Id        string `json:"id"`
+	Id        int64  `json:"id,string"`
 	Recurring string `json:"recurring"`
-	Start     string `json:"start"`
-	Duration  string `json:"duration"`
+	Start     int64  `json:"start,string"`
+	Duration  int64  `json:"duration,string"`
 }
 
 func Produce(persistanceApi *persistance.Persist) (*ConfigManager, error) {
