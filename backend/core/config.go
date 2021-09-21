@@ -8,7 +8,7 @@ import (
 )
 
 type Configuration struct {
-	Offset int    `json:"offset,string,omitempty"`
+	Offset int    `json:"offset,string"`
 	Rules  []Rule `json:"rules"`
 }
 

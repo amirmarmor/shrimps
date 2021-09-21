@@ -85,7 +85,8 @@ func (executor *Executor) SetConfig(c echo.Context) error {
 		return fmt.Errorf("failed to set configuration: %v", err)
 	}
 
-	return c.JSON(http.StatusOK, &SetResponse{Message: "done"})
+	response := executor.prepareConfigResponse()
+	return c.JSON(http.StatusOK, response)
 }
 
 func (executor *Executor) DoAction(c echo.Context) error {
