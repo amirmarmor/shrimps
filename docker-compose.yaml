@@ -3,6 +3,7 @@ services:
     redis:
       container_name: redis
       build: ./redis/.
+      image: amirmarmor/seawise_redis
       privileged: true
       ports:
         - "6379:6379"
@@ -13,6 +14,7 @@ services:
       container_name: backend
       build:
         context: ./backend
+      image: amirmarmor/seawise_backend
       environment:
         - HOST=redis
       devices:
@@ -37,6 +39,7 @@ services:
       container_name: client
       build:
         context: ./guifrontend
+      image: amirmarmor/seawise_client
       environment:
         - BACKEND_HOST=backend
       ports:
