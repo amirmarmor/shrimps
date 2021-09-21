@@ -14,6 +14,7 @@ import (
 type Executor struct {
 	Manager *core.ConfigManager
 	Capt    *capture.Capture
+	Wait    bool
 }
 
 type ActionRequest struct {
@@ -86,6 +87,8 @@ func (executor *Executor) SetConfig(c echo.Context) error {
 	}
 
 	response := executor.prepareConfigResponse()
+	//go executor.Capt.Update() //TODO: fix update when offset changes - restart issue
+
 	return c.JSON(http.StatusOK, response)
 }
 
@@ -107,6 +110,7 @@ func (executor *Executor) DoAction(c echo.Context) error {
 	}
 
 	executor.Capt.Action <- action
+
 	time.Sleep(time.Millisecond * 10)
 	response := executor.prepareConfigResponse()
 	return c.JSON(http.StatusOK, response)

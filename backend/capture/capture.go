@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"time"
 	"www.seawise.com/shrimps/backend/core"
+	"www.seawise.com/shrimps/backend/log"
 )
 
 type Capture struct {
-	counter    int
-	config     *core.Configuration
-	Channels   []*Channel
-	Recording  map[string]time.Time
-	Action     chan *ShowRecord
-	Errors     chan error
+	counter     int
+	run         bool
+	config      *core.Configuration
+	Channels    []*Channel
+	Recording   map[string]time.Time
+	Action      chan *ShowRecord
+	StopChannel chan string
+	Errors      chan error
 }
 
 type ShowRecord struct {
@@ -23,7 +26,9 @@ type ShowRecord struct {
 func Create(config *core.Configuration) *Capture {
 	return &Capture{
 		config: config,
+		run:    true,
 		Action: make(chan *ShowRecord, 0),
+		StopChannel: make(chan string, 0),
 	}
 }
 
@@ -32,16 +37,18 @@ func (c *Capture) Init() error {
 }
 
 func (c *Capture) detectCameras() error {
-	detecting := true
+	//detecting := true
 	i := c.config.Offset
-	for detecting {
+	c.Channels = make([]*Channel, 0)
+	for i = c.config.Offset; i < 10; i++ {
 		channel := CreateChannel(i, c.config.Rules)
 		err := channel.Init()
 		if err != nil {
-			detecting = false
+			continue
+			//detecting = false
 		} else {
 			c.Channels = append(c.Channels, channel)
-			i += 2
+			//i += 2
 		}
 	}
 
@@ -49,28 +56,54 @@ func (c *Capture) detectCameras() error {
 }
 
 func (c *Capture) Start() {
-	for true {
+	for c.run {
 		select {
 		case action := <-c.Action:
 			c.update(action)
+		case s := <-c.StopChannel:
+			c.stop(s)
 		default:
 			c.capture()
 		}
 	}
+	c.StopChannel <- "restarting"
 }
 
-//func (c *Capture) Update(config *core.Configuration) error {
-//	for i := 0; i < len(c.Channels); i++ {
-//		c.Channels[i].close()
-//	}
-//	c.config = config
-//	err := c.Init()
-//	if err != nil {
-//		return err
-//	}
-//	go c.Start()
-//	return nil
-//}
+func (c *Capture) Update() {
+	c.StopChannel <- "stopping"
+	for !c.run {
+		select {
+		case s := <-c.StopChannel:
+			c.restart(s)
+		default:
+			continue
+		}
+	}
+}
+
+func (c *Capture) stop(s string) {
+	log.V5(fmt.Sprintf("capture - %s", s))
+	c.run = false
+}
+
+func (c *Capture) restart(s string) error {
+	log.V5(fmt.Sprintf("capture - %s", s))
+	c.run = true
+
+	for i := 0; i < len(c.Channels); i++ {
+		c.Channels[i].close()
+	}
+
+	c.Channels = make([]*Channel, 0)
+
+	err := c.Init()
+	if err != nil {
+		return err
+	}
+
+	go c.Start()
+	return nil
+}
 
 func (c *Capture) update(action *ShowRecord) error {
 	if action.Type == "show" {
@@ -95,4 +128,3 @@ func (c *Capture) capture() error {
 	}
 	return nil
 }
-
