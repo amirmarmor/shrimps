@@ -10,7 +10,7 @@ import (
 type Capture struct {
 	counter     int
 	run         bool
-	config      *core.Configuration
+	manager     *core.ConfigManager
 	Channels    []*Channel
 	Recording   map[string]time.Time
 	Action      chan *ShowRecord
@@ -23,24 +23,28 @@ type ShowRecord struct {
 	Channel int
 }
 
-func Create(config *core.Configuration) *Capture {
+func Create(config *core.ConfigManager) *Capture {
 	return &Capture{
-		config: config,
-		run:    true,
-		Action: make(chan *ShowRecord, 0),
+		manager:     config,
+		run:         true,
+		Action:      make(chan *ShowRecord, 0),
 		StopChannel: make(chan string, 0),
 	}
 }
 
 func (c *Capture) Init() error {
+	err := c.manager.GetConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get config: %v", err)
+	}
 	return c.detectCameras()
 }
 
 func (c *Capture) detectCameras() error {
-	i := c.config.Offset
+	i := c.manager.Config.Offset
 	c.Channels = make([]*Channel, 0)
-	for i = c.config.Offset; i < 10; i++ {
-		channel := CreateChannel(i, c.config.Rules)
+	for i = c.manager.Config.Offset; i < 10; i++ {
+		channel := CreateChannel(i, c.manager.Config.Rules)
 		err := channel.Init()
 		if err != nil {
 			continue
@@ -108,6 +112,17 @@ func (c *Capture) update(action *ShowRecord) error {
 	if action.Type == "record" {
 		c.Channels[action.Channel].Record = !c.Channels[action.Channel].Record
 	}
+
+	if action.Type == "config" {
+		err := c.manager.GetConfig()
+		for _, channel := range c.Channels {
+			channel.rules = c.manager.Config.Rules
+		}
+		if err != nil {
+			return err
+		}
+	}
+
 	err := c.capture()
 	if err != nil {
 		return err

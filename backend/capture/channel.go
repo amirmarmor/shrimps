@@ -99,6 +99,7 @@ func (c *Channel) Read() error {
 	imageRecord := c.checkImageRules()
 	videoRecord := c.checkVideoRules()
 	idle := !c.Show && !c.Record && !imageRecord && !videoRecord
+
 	if idle {
 		if c.init {
 			err := c.close()

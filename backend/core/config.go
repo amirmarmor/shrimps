@@ -32,29 +32,28 @@ func Produce(persistanceApi *persistance.Persist) (*ConfigManager, error) {
 		Persist: persistanceApi,
 	}
 
-	config, err := manager.GetConfig()
+	err := manager.GetConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get configuration: %v", err)
 	}
 
-	manager.Config = config
 
 	return &manager, nil
 }
 
-func (cm *ConfigManager) GetConfig() (*Configuration, error) {
+func (cm *ConfigManager) GetConfig() error {
 	configJson, err := cm.Persist.Get(exposed.ConfigKey)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	config := &Configuration{}
 	if configJson != "" {
 		err = json.Unmarshal([]byte(configJson), &config)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		return config, nil
+		return nil
 	}
 
 	config.Offset = Defaults.Offset
@@ -62,24 +61,26 @@ func (cm *ConfigManager) GetConfig() (*Configuration, error) {
 	rules := make([]Rule, 0)
 	err = json.Unmarshal([]byte(Defaults.Rules), &rules)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal: %v", err)
+		return fmt.Errorf("failed to unmarshal: %v", err)
 	}
 
 	show := make([]int, 0)
 	err = json.Unmarshal([]byte(Defaults.Show), &show)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal: %v", err)
+		return fmt.Errorf("failed to unmarshal: %v", err)
 	}
 
 	record := make([]int, 0)
 	err = json.Unmarshal([]byte(Defaults.Record), &record)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal: %v", err)
+		return fmt.Errorf("failed to unmarshal: %v", err)
 	}
 
 	config.Rules = rules
 
-	return config, nil
+	cm.Config = config
+
+	return nil
 }
 
 func (cm *ConfigManager) SetConfig(configJson string) error {

@@ -46,7 +46,7 @@ func (p *EntryPoint) buildBlocks() {
 		panic(err)
 	}
 
-	p.capt = capture.Create(p.manager.Config)
+	p.capt = capture.Create(p.manager)
 	p.capt.Init()
 	go p.capt.Start()
 

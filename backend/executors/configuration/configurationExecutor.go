@@ -86,6 +86,13 @@ func (executor *Executor) SetConfig(c echo.Context) error {
 		return fmt.Errorf("failed to set configuration: %v", err)
 	}
 
+	action := &capture.ShowRecord{
+		Type:    "config",
+		Channel: 0,
+	}
+
+	executor.Capt.Action <- action
+
 	response := executor.prepareConfigResponse()
 	//go executor.Capt.Update() //TODO: fix update when offset changes - restart issue
 
