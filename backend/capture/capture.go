@@ -37,7 +37,6 @@ func (c *Capture) Init() error {
 }
 
 func (c *Capture) detectCameras() error {
-	//detecting := true
 	i := c.config.Offset
 	c.Channels = make([]*Channel, 0)
 	for i = c.config.Offset; i < 10; i++ {
@@ -45,13 +44,10 @@ func (c *Capture) detectCameras() error {
 		err := channel.Init()
 		if err != nil {
 			continue
-			//detecting = false
 		} else {
 			c.Channels = append(c.Channels, channel)
-			//i += 2
 		}
 	}
-
 	return nil
 }
 

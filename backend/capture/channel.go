@@ -12,16 +12,18 @@ import (
 )
 
 type Channel struct {
-	name      int
-	init      bool
-	cap       *gocv.VideoCapture
-	image     gocv.Mat
-	writer    *gocv.VideoWriter
-	Stream    *mjpeg.Stream
-	Show      bool
-	Record    bool
+	created    time.Time
+	name       int
+	init       bool
+	cap        *gocv.VideoCapture
+	image      gocv.Mat
+	writer     *gocv.VideoWriter
+	Show       bool
+	Record     bool
 	Recordings map[int64]*Recording
-	rules     []core.Rule
+	rules      []core.Rule
+	path       string
+	Stream     *mjpeg.Stream
 }
 
 type Recording struct {
@@ -31,10 +33,11 @@ type Recording struct {
 
 func CreateChannel(channel int, rules []core.Rule) *Channel {
 	return &Channel{
-		name:   channel,
-		Stream: mjpeg.NewStream(),
-		rules:  rules,
+		name:       channel,
+		Stream:     mjpeg.NewStream(),
+		rules:      rules,
 		Recordings: make(map[int64]*Recording),
+		created:    time.Now(),
 	}
 }
 
@@ -68,6 +71,7 @@ func (c *Channel) Init() error {
 	c.image = img
 	c.writer = writer
 	c.init = true
+	c.path = path
 
 	return nil
 }
@@ -92,7 +96,10 @@ func (c *Channel) close() error {
 }
 
 func (c *Channel) Read() error {
-	if !c.Show && !c.Record && !c.checkRules(){
+	imageRecord := c.checkImageRules()
+	videoRecord := c.checkVideoRules()
+	idle := !c.Show && !c.Record && !imageRecord && !videoRecord
+	if idle {
 		if c.init {
 			err := c.close()
 			if err != nil {
@@ -119,7 +126,16 @@ func (c *Channel) Read() error {
 		return nil
 	}
 
-	if c.Record || c.checkRules() {
+	if imageRecord {
+		now := time.Now()
+		saveFileName := c.path + "/" + now.Format("2006-01-02--15-04-05") + "-image.jpg"
+		ok := gocv.IMWrite(saveFileName, c.image)
+		if !ok {
+			return fmt.Errorf("read failed to write image")
+		}
+	}
+
+	if c.Record || videoRecord {
 		err := c.writer.Write(c.image)
 		if err != nil {
 			return fmt.Errorf("read failed to write: %v", err)
@@ -136,6 +152,7 @@ func (c *Channel) Read() error {
 }
 
 func (c *Channel) createSavePath() (string, error) {
+	now := time.Now()
 	_, err := os.Stat("videos")
 
 	if os.IsNotExist(err) {
@@ -159,12 +176,66 @@ func (c *Channel) createSavePath() (string, error) {
 		}
 	}
 
+	if now.Sub(c.created) >= time.Hour*24 {
+		err := os.RemoveAll(path)
+		if err != nil {
+			log.Error("couldnt remove folder", path)
+		}
+		c.created = now
+	}
+
 	return path, nil
 }
 
-func (c *Channel) checkRules() bool {
+func (c *Channel) checkImageRules() bool {
 	now := time.Now()
 	for _, rule := range c.rules {
+		if rule.Type != "image" {
+			return false
+		}
+
+		if rule.Duration == 0 {
+			return false
+		}
+
+		var t int64
+		if rule.Recurring == "Second" {
+			t = time.Minute.Milliseconds()
+		} else if rule.Recurring == "Minute" {
+			t = time.Hour.Milliseconds()
+		} else {
+			t = time.Hour.Milliseconds() * 24
+		}
+
+		interval := time.Duration(t / rule.Duration)
+		if c.Recordings[rule.Id] == nil {
+			c.Recordings[rule.Id] = &Recording{
+				startTime:   now,
+				isRecording: true,
+			}
+			return true
+		}
+
+		if now.Sub(c.Recordings[rule.Id].startTime) >= interval {
+			c.Recordings[rule.Id].startTime = now
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Channel) checkVideoRules() bool {
+	now := time.Now()
+	for _, rule := range c.rules {
+
+		if rule.Type != "video" {
+			return false
+		}
+
+		if rule.Duration == 0 {
+			return false
+		}
+
 		bar := GetTimeField(rule.Recurring, now)
 		if rule.Start == bar {
 			if c.Recordings[rule.Id] == nil {

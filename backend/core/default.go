@@ -16,7 +16,7 @@ type Default = struct {
 var Defaults Default
 
 func InitFlags() {
-	defaultRule := `[{"id": "0", "recurring": "Second", "start": "0", "duration": "30"}]`
+	defaultRule := `[]`
 	defaultShow := "[]"
 	defaultRecord := "[]"
 

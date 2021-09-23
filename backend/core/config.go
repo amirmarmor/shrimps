@@ -22,6 +22,7 @@ type Rule struct {
 	Recurring string `json:"recurring"`
 	Start     int64  `json:"start,string"`
 	Duration  int64  `json:"duration,string"`
+	Type      string `json:"type"`
 }
 
 func Produce(persistanceApi *persistance.Persist) (*ConfigManager, error) {

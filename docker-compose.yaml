@@ -10,39 +10,39 @@ services:
       volumes:
         - ../data/redis:/data
       restart: always
-    backend:
-      container_name: backend
-      build:
-        context: ./backend
-      image: amirmarmor/seawise_backend
-      environment:
-        - HOST=redis
-      devices:
-        - /dev/video0:/dev/video0
-        - /dev/video1:/dev/video1
-        - /dev/video2:/dev/video2
-        - /dev/video3:/dev/video3
-        - /dev/video4:/dev/video4
-        - /dev/video5:/dev/video5
-        - /dev/video6:/dev/video6
-        - /dev/video7:/dev/video7
-        - /dev/video8:/dev/video8
-        - /dev/video9:/dev/video9
-      volumes:
-        - /videos:/app/videos
-      ports:
-        - "1323:1323"
-        - "8080:8080"
-      depends_on:
-        - redis
-    client:
-      container_name: client
-      build:
-        context: ./guifrontend
-      image: amirmarmor/seawise_client
-      environment:
-        - BACKEND_HOST=backend
-      ports:
-        - "3000:3000"
-      depends_on:
-        - backend
+#    backend:
+#      container_name: backend
+#      build:
+#        context: ./backend
+#      image: amirmarmor/seawise_backend
+#      environment:
+#        - HOST=redis
+#      devices:
+#        - /dev/video0:/dev/video0
+#        - /dev/video1:/dev/video1
+#        - /dev/video2:/dev/video2
+#        - /dev/video3:/dev/video3
+#        - /dev/video4:/dev/video4
+#        - /dev/video5:/dev/video5
+#        - /dev/video6:/dev/video6
+#        - /dev/video7:/dev/video7
+#        - /dev/video8:/dev/video8
+#        - /dev/video9:/dev/video9
+#      volumes:
+#        - /videos:/app/videos
+#      ports:
+#        - "1323:1323"
+#        - "8080:8080"
+#      depends_on:
+#        - redis
+#    client:
+#      container_name: client
+#      build:
+#        context: ./guifrontend
+#      image: amirmarmor/seawise_client
+#      environment:
+#        - BACKEND_HOST=backend
+#      ports:
+#        - "3000:3000"
+#      depends_on:
+#        - backend
