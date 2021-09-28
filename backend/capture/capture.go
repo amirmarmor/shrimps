@@ -33,23 +33,26 @@ func Create(config *core.ConfigManager) *Capture {
 }
 
 func (c *Capture) Init() error {
-	err := c.manager.GetConfig()
-	if err != nil {
-		return fmt.Errorf("failed to get config: %v", err)
-	}
 	return c.detectCameras()
 }
 
 func (c *Capture) detectCameras() error {
+	isDetecting := true
 	i := c.manager.Config.Offset
 	c.Channels = make([]*Channel, 0)
-	for i = c.manager.Config.Offset; i < 10; i++ {
+	for isDetecting {
 		channel := CreateChannel(i, c.manager.Config.Rules)
 		err := channel.Init()
 		if err != nil {
-			continue
+			if i > 10 {
+				isDetecting = false
+			} else {
+				i++
+				continue
+			}
 		} else {
 			c.Channels = append(c.Channels, channel)
+			i++
 		}
 	}
 	return nil

@@ -8,8 +8,9 @@ import (
 )
 
 type Configuration struct {
-	Offset int    `json:"offset,string"`
-	Rules  []Rule `json:"rules"`
+	Offset  int    `json:"offset,string"`
+	Cleanup bool   `json:"bool,string"`
+	Rules   []Rule `json:"rules"`
 }
 
 type ConfigManager struct {
@@ -37,7 +38,6 @@ func Produce(persistanceApi *persistance.Persist) (*ConfigManager, error) {
 		return nil, fmt.Errorf("failed to get configuration: %v", err)
 	}
 
-
 	return &manager, nil
 }
 
@@ -53,6 +53,7 @@ func (cm *ConfigManager) GetConfig() error {
 		if err != nil {
 			return err
 		}
+		cm.Config = config
 		return nil
 	}
 

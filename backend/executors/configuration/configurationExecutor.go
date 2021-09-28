@@ -28,6 +28,7 @@ type SetResponse struct {
 
 type ConfigResponse struct {
 	Offset   int         `json:"offset"`
+	Cleanup  bool        `json:"cleanup"`
 	Rules    []core.Rule `json:"rules"`
 	Show     []int       `json:"show"`
 	Record   []int       `json:"record"`
@@ -55,7 +56,9 @@ func (executor *Executor) prepareConfigResponse() *ConfigResponse {
 	}
 	return &ConfigResponse{
 		executor.Manager.Config.Offset,
+		executor.Manager.Config.Cleanup,
 		executor.Manager.Config.Rules,
+
 		show,
 		record,
 		len(executor.Capt.Channels),

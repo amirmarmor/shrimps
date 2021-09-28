@@ -13,6 +13,7 @@ import (
 
 type Channel struct {
 	created    time.Time
+	cleanup    bool
 	name       int
 	init       bool
 	cap        *gocv.VideoCapture
@@ -177,7 +178,7 @@ func (c *Channel) createSavePath() (string, error) {
 		}
 	}
 
-	if now.Sub(c.created) >= time.Hour*24 {
+	if c.cleanup && now.Sub(c.created) >= time.Hour*24 {
 		err := os.RemoveAll(path)
 		if err != nil {
 			log.Error("couldnt remove folder", path)
