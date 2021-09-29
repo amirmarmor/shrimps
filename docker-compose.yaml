@@ -10,23 +10,23 @@ services:
       volumes:
         - ../data/redis:/data
       restart: always
-    backend:
-      container_name: backend
-      build:
-        context: ./backend
-      image: amirmarmor/seawise_backend
-      privileged: true
-      environment:
-        - HOST=redis
-      devices:
-        - /dev:/dev
-      volumes:
-        - /videos:/app/videos
-      ports:
-        - "1323:1323"
-        - "8080:8080"
-      depends_on:
-        - redis
+#    backend:
+#      container_name: backend
+#      build:
+#        context: ./backend
+#      image: amirmarmor/seawise_backend
+#      privileged: true
+#      environment:
+#        - HOST=redis
+#      devices:
+#        - /dev:/dev
+#      volumes:
+#        - /videos:/app/videos
+#      ports:
+#        - "1323:1323"
+#        - "8080:8080"
+#      depends_on:
+#        - redis
     client:
       container_name: client
       build:

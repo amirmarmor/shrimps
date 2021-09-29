@@ -13,7 +13,7 @@ type RedisConfiguration struct {
 var RedisConfig RedisConfiguration
 
 func InitFlags() {
-	flag.StringVar(&RedisConfig.Host, "host", "redis", "redis host")
+	flag.StringVar(&RedisConfig.Host, "host", "localhost", "redis host")
 
 	log.AddNotify(postParse)
 }

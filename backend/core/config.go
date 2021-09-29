@@ -98,12 +98,3 @@ func (cm *ConfigManager) SetConfig(configJson string) error {
 	cm.Config = config
 	return nil
 }
-
-//func (cm *ConfigManager) GetRules() (*Rules, error) {
-//	rules := &Rules{}
-//	err := json.Unmarshal([]byte(cm.Config.Rules), rules)
-//	if err != nil {
-//		return nil, fmt.Errorf("failed to unmarshal rules: %v", err)
-//	}
-//	return rules, nil
-//}
