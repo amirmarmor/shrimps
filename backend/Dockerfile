@@ -6,7 +6,7 @@ COPY . /go/src/gocv.io/x/gocv/
 
 WORKDIR /app
 COPY . ./
-RUN go get
+RUN GOARCH=arm go get
 RUN GOARCH=arm go build -o /start
 EXPOSE 1323
 
