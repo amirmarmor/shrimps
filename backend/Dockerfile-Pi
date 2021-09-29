@@ -1,0 +1,14 @@
+FROM yummygooey/raspbian-buster
+
+RUN sudo apt update & sudo apt upgrade
+RUN mkdir /tmp
+
+WORKDIR /tmp
+RUN wget https://golang.org/dl/go1.16.8.linux-armv6l.tar.gz
+RUN sudo tar -C /usr/local -xzf go1.16.8.linux-armv6l.tar.gz
+
+RUN echo "PATH=$PATH:/usr/local/go/bin; GOPATH=$HOME/go" >> $HOME/.bashrc
+RUN cat $HOME/.bashrc
+RUN source $HOME/.bashrc
+CMD ["go", "version"]
+
