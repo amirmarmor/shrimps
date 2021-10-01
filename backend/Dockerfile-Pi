@@ -1,6 +1,6 @@
 FROM yummygooey/raspbian-buster as golang
 
-RUN apt-get update & apt-get upgrade
+RUN apt-get update
 RUN apt-get install wget -y
 RUN mkdir /tempgo
 
