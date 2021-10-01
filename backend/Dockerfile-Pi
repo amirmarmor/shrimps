@@ -1,9 +1,9 @@
 FROM yummygooey/raspbian-buster as golang
 
 RUN apt update & apt upgrade
-RUN mkdir /tmp
+RUN mkdir /tempgo
 
-WORKDIR /tmp
+WORKDIR /tempgo
 RUN wget https://golang.org/dl/go1.16.8.linux-armv6l.tar.gz
 RUN tar -C /usr/local -xzf go1.16.8.linux-armv6l.tar.gz
 
