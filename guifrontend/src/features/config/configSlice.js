@@ -1,6 +1,6 @@
 import {createSlice} from "@reduxjs/toolkit"
 
-const host = process.env["BACKEND_HOST"] || "127.0.0.1"
+const host = process.env["REACT_APP_BACKEND_HOST"] || "127.0.0.1"
 const api = `http://${host}:1323`
 const initialState = {offset: 0, cleanup: false, rules: []}
 
