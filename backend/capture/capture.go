@@ -44,7 +44,7 @@ func (c *Capture) detectCameras() error {
 		channel := CreateChannel(i, c.manager.Config.Rules)
 		err := channel.Init()
 		if err != nil {
-			if i > 3 {
+			if i > 2 {
 				isDetecting = false
 			} else {
 				i+=2
