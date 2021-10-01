@@ -4,6 +4,7 @@ import {useDispatch} from "react-redux"
 import {actionAsync} from "../../features/config/configSlice"
 import CheckBox from "./checkBox"
 
+//TODO: get host from one place
 const host = process.env["REACT_APP_BACKEND_HOST"] || "127.0.0.1"
 
 function ChannelState(props) {
