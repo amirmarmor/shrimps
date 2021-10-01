@@ -1,6 +1,6 @@
 FROM yummygooey/raspbian-buster as golang
 
-RUN apt update & sudo apt upgrade
+RUN apt update & apt upgrade
 RUN mkdir /tmp
 
 WORKDIR /tmp
